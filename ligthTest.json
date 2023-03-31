@@ -1,0 +1,26 @@
+[
+  {
+    "Blockchain": "WAX",
+    "Collection": "artvndngmchn",
+    "Name": "California Kitchen",
+    "Template ID": 126346,
+    "Material": "Coal",
+    "Mining power": 1000
+  },
+  {
+    "Blockchain": "WAX",
+    "Collection": "artvndngmchn",
+    "Name": "Brawl Gallery Action: Animated Pencil Edition",
+    "Template ID": 407981,
+    "Material": "Coal",
+    "Mining power": 1000
+  },
+  {
+    "Blockchain": "WAX",
+    "Collection": "artvndngmchn",
+    "Name": "Brawl Gallery Action",
+    "Template ID": 407179,
+    "Material": "Coal",
+    "Mining power": 1000
+  }
+]
