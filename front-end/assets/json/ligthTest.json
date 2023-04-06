@@ -5,7 +5,7 @@
     "Name": "California Kitchen",
     "Template ID": 126346,
     "Material": "Coal",
-    "Mining power": 1000
+    "Mining power": 500
   },
   {
     "Blockchain": "WAX",
@@ -13,7 +13,7 @@
     "Name": "Brawl Gallery Action: Animated Pencil Edition",
     "Template ID": 407981,
     "Material": "Coal",
-    "Mining power": 1000
+    "Mining power": 50
   },
   {
     "Blockchain": "WAX",

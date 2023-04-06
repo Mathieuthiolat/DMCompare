@@ -52,6 +52,9 @@
             <div style="text-align: center;margin: 15px 0px;">
                 <button id="driver" >Load Data</button>
                 <button id="stop">Stop load Data</button>
+                <label for="mp-slider">MP minimum : </label>
+                <input id="mp-slider" type="number" min="0" max="2000" step="1" value="0">
+
                 <div class="counter">
                     <h3>Counter</h3>
                     <span id="currentAssets"></span> / <span id="totalAssets"></span>
@@ -95,6 +98,10 @@
     var stopLoad = false;
     var currentAssets = 0;
 
+    var sliderMinMp = $("#mp-slider")
+
+
+
     $(document).ready(function() {
         $("#driver").prop('disabled', true)
         $("#stop").prop('disabled', true)
@@ -105,24 +112,34 @@
             $("#totalAssets").html(json.length)
             $("#driver").prop('disabled', false)
         });
+
+        sliderMinMp.on("input", function() {
+            var minMp = $(this).val();
+            var filteredData = filterData(myJsonString, minMp);
+            displayTable(filteredData);
+        });
+
         $("#stop").click(async function(event) {
             stopLoad=true
             $("#driver").prop('disabled', false)
+            $("#mp-slider").prop('disabled', false)
 
         })
 
+        var loop = 0;
         $("#driver").click(async function(event){
             $("#myTable tbody tr").remove()
 
             $("#driver").prop('disabled', true)
+            $("#mp-slider").prop('disabled', true)
             $("#stop").prop('disabled', false)
 
             // Ajouter la fonction de calcul de la puissance minière
             for (const line of json) {
                 if(stopLoad)
                     continue;
-                await new Promise(r => setTimeout(r, 500));
-
+                if(loop%10==0)
+                    await new Promise(r => setTimeout(r, 1000));
 
                 line.waxPrice = await Price(line['Template ID'], line.Collection);
                 line.valMpWax = line.waxPrice/line['Mining power'];
@@ -132,6 +149,7 @@
                 currentAssets++
                 $("#currentAssets").html(currentAssets)
                 arrayTmp.push(line)
+                loop++;
             }
             // await data.forEach(async function(item) {
             //     item.waxPrice = await calculateMiningPower(item['Template ID'], item['Mining power']);
@@ -163,6 +181,51 @@
         });
 
     });
+
+    // Fonction pour afficher le tableau HTML à partir des données
+    function displayTable(data) {
+        var table = $("#myTable");
+        table.empty();
+        var headerRow = $("<tr>");
+        headerRow.append($("<th>").text("Collection"));
+        headerRow.append($("<th>").text("Name"));
+        headerRow.append($("<th>").text("Template ID"));
+        headerRow.append($("<th>").text("Material"));
+        headerRow.append($("<th>").text("Sugested Price"));
+        headerRow.append($("<th>").text("Mining power"));
+        headerRow.append($("<th>").text("Wax / MP"));
+        table.append($("<thead>").append(headerRow));
+        var body = $("<tbody>");
+        $.each(data, function(i, item) {
+            if(item.waxPrice == undefined || isNaN(item.waxPrice) || item.waxPrice == 0)
+                return true;
+
+            var link = "https://wax.atomichub.io/market?order=asc&sort=price&state=1&symbol=WAX&template_id="+item['Template ID']+""
+
+            var row = $("<tr>");
+            row.append($("<td>").text(item.Collection));
+            row.append($("<td>").text(item.Name));
+            row.append($("<td>").html("<a href='"+link+"' target='_blank'>" + item['Template ID'] + "</a>"));
+            row.append($("<td>").text(item.Material));
+            row.append($("<td>").text(item.waxPrice));
+            row.append($("<td>").text(item['Mining power']));
+            row.append($("<td>").text(item.valMpWax));
+            body.append(row);
+        });
+        table.append(body);
+    }
+
+    // Fonction pour filtrer les données en fonction du prix minimum
+    function filterData(data, minPrice) {
+        var filteredData = [];
+        $.each(data, function(i, item) {
+            if (parseFloat(item['Mining power']) >= parseFloat(minPrice)) {
+                filteredData.push(item);
+            }
+        });
+        return filteredData;
+    }
+
     async function Price(id,collection){
         try {
 

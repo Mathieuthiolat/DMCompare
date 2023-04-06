@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tableau triable avec slider</title>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      padding: 5px;
+    }
+    th {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<h1>Tableau triable avec slider</h1>
+<div>
+  <label for="price-slider">Prix minimum : <span id="display_price"></span></label>
+  <input id="price-slider" type="number" min="0" max="100" step="1" value="0">
+</div>
+<table id="my-table"></table>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+  var data;
+
+  $(document).ready(function() {
+    // Charger les données du fichier JSON
+    $.getJSON("./assets/json/ligthTest.json", function(json) {
+      data = json;
+      displayTable(data);
+    });
+
+    // Ajouter un écouteur d'événement sur le slider pour trier le tableau lorsque sa valeur change
+    $("#price-slider").on("input", function() {
+      var minPrice = $(this).val();
+      $("#display_price")[0].innerHTML = this.value;
+      var filteredData = filterData(data, minPrice);
+      displayTable(filteredData);
+    });
+  });
+
+  // Fonction pour afficher le tableau HTML à partir des données
+  function displayTable(data) {
+    var table = $("#my-table");
+    table.empty();
+    var headerRow = $("<tr>");
+    headerRow.append($("<th>").text("Collection"));
+    headerRow.append($("<th>").text("Name"));
+    headerRow.append($("<th>").text("Template ID"));
+    headerRow.append($("<th>").text("Material"));
+    headerRow.append($("<th>").text("Price"));
+    headerRow.append($("<th>").text("Mining power"));
+    headerRow.append($("<th>").text("MP"));
+    table.append($("<thead>").append(headerRow));
+    var body = $("<tbody>");
+    $.each(data, function(i, item) {
+      var row = $("<tr>");
+      row.append($("<td>").text(item.Collection));
+      row.append($("<td>").text(item.Name));
+      row.append($("<td>").text(item['Template ID']));
+      row.append($("<td>").text(item.Material));
+      row.append($("<td>").text(item['Mining power']));
+      row.append($("<td>").text(item['Mining power']));
+      row.append($("<td>").text(item['Mining power']));
+      body.append(row);
+    });
+    table.append(body);
+  }
+
+  // Fonction pour filtrer les données en fonction du prix minimum
+  function filterData(data, minPrice) {
+    var filteredData = [];
+    $.each(data, function(i, item) {
+      if (parseFloat(item['Mining power']) >= parseFloat(minPrice)) {
+        filteredData.push(item);
+      }
+    });
+    return filteredData;
+  }
+</script>
+</body>
+</html>
