@@ -60,8 +60,8 @@ function showMsg(message="",type="success"){
     }else{
         $( "#successMsg" )[0].innerHTML = message;         
         target =  $( "#popSuccess" );
-
     }
+    console.log(message)
     target.removeClass("fade")
     target.addClass("show")
 

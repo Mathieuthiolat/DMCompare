@@ -52,6 +52,9 @@
             <input id="user" name="user" type="text" placeholder="user name" style="color: black;"/>
             <button id="fetch_user" onclick="fetchData()">Fetch user data</button>
             <button id="unstack" onclick="unstack()">Unstack Assets</button>
+            <div>
+                Stack value : <span id="totalWax"></span> Wax | <span id="totalMP"></span> MP
+            </div>
             <div class="counter">
                 <h3>Counter</h3>
                 <span id="currentAssets"></span> / <span id="totalAssets"></span>
@@ -66,6 +69,7 @@
                     <th>Sugested price</th>
                     <th>Mining power</th>
                     <th>Wax / MP</th>
+                    <th>LastSale</th>
                 </tr>
             </thead>
             <tbody>
@@ -91,6 +95,8 @@
     var myAssets = [];
     var stackabledTemplate;
     var currentAssets = 0;
+    var totalWax = 0;
+    var totalMP = 0;
 
     $(document).ready(function() {
         $("#unstack").prop('disabled', true)
@@ -124,7 +130,7 @@
             currentAssets++
             $("#currentAssets").html(currentAssets)
 
-            var tmpLine = {assets_id : {},name : {},template_id : {},collection : {},price : {},mining_power : {},ratio : {}};
+            var tmpLine = {assets_id : {},name : {},template_id : {},collection : {},price : {},mining_power : {},ratio : {},last_sale : {}};
 
             //Get template id + collection name from them
             tmpLine.assets_id = line.asset_id;
@@ -137,17 +143,30 @@
             var jsonInfo = await searchAssetsInfo(tmpLine.template_id)
             tmpLine.mining_power = jsonInfo['Mining power']
             var priceTmp = await ajaxPrice(tmpLine.template_id, tmpLine.collection);
-            var mulipli = 1;
+            var lastSaleTimeStamp = await getLastSale(tmpLine.template_id, tmpLine.collection)
+            var lastSaleDiff = new Date().getTime() - lastSaleTimeStamp;
 
+            var mulipli = 1;
             if(priceTmp.data[0] != undefined){
                 for(i = 0;i<priceTmp.data[0].price.token_precision;i++){
                     mulipli=mulipli*10;
                 }
-                tmpLine.price = result.data[0].price.amount/mulipli
+                tmpLine.price = priceTmp.data[0].price.amount/mulipli
             }else{
                 tmpLine.price = 0
             }
+            var sale_diff;
+            if(lastSaleDiff < 3600000){
+                sale_diff = "<span style='color:green'>-1h</span>";
+            }else if(lastSaleDiff < 86400000 ){
+                sale_diff = "<span style='color:#094309'>-24h</span>";
+            }else if(lastSaleDiff < 604800000 ) {
+                sale_diff = "<span style='color:#df8d8d'>-7j</span>";
+            }else{
+                sale_diff = "<span style='color:red'>+7j</span>";
+            }
 
+            tmpLine.last_sale = sale_diff;
             tmpLine.ratio = tmpLine.price/tmpLine.mining_power;
             myAssets.push(tmpLine)
             await new Promise(r => setTimeout(r, 650));
@@ -174,9 +193,15 @@
             items.push("<td>" + val.price + "</td>");
             items.push("<td>" + val.mining_power + "</td>");
             items.push("<td>" + val.ratio + "</td>");
+            items.push("<td>" + val.last_sale + "</td>");
             items.push("</tr>");
+            totalWax += parseFloat(val.price);
+            totalMP += parseFloat(val.mining_power);
         });
+
         $("#myTable tbody").html(items.join(""));
+        $("#totalWax").html(totalWax.toFixed(2));
+        $("#totalMP").html(totalMP.toFixed(2));
         showMsg("All stacked asstes loaded");
 
 
@@ -234,6 +259,18 @@
                 url: 'https://wax-atomic-api.eosphere.io/atomicmarket/v2/sales?limit=10&order=asc&sort=price&state=1&template_id='+id+'&collection_name='+collection
             });
             return result;
+        } catch (error) {
+            showMsg(error,"error")
+        }
+    }
+
+    async function getLastSale(id,collection){
+        try {
+            result = await $.ajax({
+                //url: 'exitlimbowax&schema_name=lore&symbol=WAX&template_id=203319'
+                url: 'https://wax-atomic-api.eosphere.io/atomicmarket/v1/prices/sales?collection_name='+collection+'&template_id='+id
+            });
+            return result.data[result.data.length-1].block_time ?? "";
         } catch (error) {
             showMsg(error,"error")
         }
