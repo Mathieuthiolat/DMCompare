@@ -10,4 +10,4 @@ module.exports = function(app,path) {
         res.sendFile(path.join(__dirname + '/front-end/' + req.params.page + '.html'));
     });
 
-}
+}       

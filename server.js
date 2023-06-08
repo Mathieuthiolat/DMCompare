@@ -6,10 +6,13 @@ const router = express.Router();
 const { JsonRpc } = require('eosjs');
 const https = require('https');
 const fetch = require('node-fetch');
+const fs = require("fs");
 
 //const resultRace = require('./result/selection_result.json')
 require('./routes')(app,path);
 app.use(express.static(__dirname + '/front-end'));
+app.use(express.json());
+
 var waxRpc = "https://atomic.wax.eosrio.io/atomicassets/v1/";
 const rpcList = ["https://api.waxsweden.org","https://wax.eu.eosamsterdam.net"];
 
@@ -27,6 +30,21 @@ app.get('/getAssetsDetail/:assets',function(req,res){
     getAssetInfo(assets).then((details) => {
         res.send(details);
     })
+});
+
+app.post('/saveInfo',function(req,res){
+    if (!req.body) {
+        res.status(400).send({
+          message: "Content can not be empty!",
+        });
+        return;
+    }
+    var data = req.body
+    storeData(data)
+    res.status(200).send({
+        message: "ok",
+    });
+    return;
 });
 
 async function getDMStakedAssets(user){
@@ -64,7 +82,13 @@ async function getAssetInfo(asset_id) {
     })
 }
 
-
+const storeData = (data) => {
+    try {
+      fs.writeFileSync("./front-end/assets/json/savedTable.json",  JSON.stringify(data))
+    } catch (err) {
+      console.error(err)
+    }
+}
 
 //add the router
 app.use('/', router);

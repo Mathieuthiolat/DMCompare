@@ -50,11 +50,26 @@
 
         <div style="margin-bottom: 150px;">
             <div style="text-align: center;margin: 15px 0px;">
-                <button id="driver" >Load Data</button>
-                <button id="stop">Stop load Data</button>
-                <label for="mp-slider">MP minimum : </label>
-                <input id="mp-slider" type="number" min="0" max="2000" step="1" value="0">
+                <div>
+                    <button id="driver" >Load Data</button>
+                    <button id="stop">Stop load Data</button>
+                    <label for="needsave">Save load</label>
+                    <input id="needsave" type="checkbox">
+                </div>
+               
+                <div>
+                    <input type="file" id="jsonFileInput" accept=".json">
+                    <button id="loadFromSave">load from save</button>
+                </div>
 
+                <div>
+                    <label for="mp-slider">MP minimum : </label>
+                    <input id="mp-slider" type="number" min="0" max="2000" step="1" value="0">
+                    <button id="search">search</button>    
+                </div>                
+                <div>
+                    <button id="clearTable">Clear</button>
+                </div>
                 <div class="counter">
                     <h3>Counter</h3>
                     <span id="currentAssets"></span> / <span id="totalAssets"></span>
@@ -94,31 +109,70 @@
     var json;
     var arrayTmp = [];
     var myJsonString;
+    var savedData;
 
     var stopLoad = false;
     var currentAssets = 0;
 
     var sliderMinMp = $("#mp-slider")
 
-
+    function getSavedData(){
+        $.getJSON("./assets/json/savedTable.json", function(data) {
+            savedData = data;
+        });
+    }
 
     $(document).ready(function() {
+        $('#clearTable').click(function() {
+            var table = $("#myTable");
+            table.empty();
+            var headerRow = $("<tr>");
+            headerRow.append($("<th>").text("Collection"));
+            headerRow.append($("<th>").text("Name"));
+            headerRow.append($("<th>").text("Template ID"));
+            headerRow.append($("<th>").text("Material"));
+            headerRow.append($("<th>").text("Sugested Price"));
+            headerRow.append($("<th>").text("Mining power"));
+            headerRow.append($("<th>").text("Wax / MP"));
+            table.append($("<thead>").append(headerRow));
+        })
+        $('#loadFromSave').click(function() {
+        var file = $('#jsonFileInput')[0].files[0];
+
+        if (file) {
+          var reader = new FileReader();
+
+          reader.onload = function(e) {
+            var jsonContent = e.target.result;
+
+            try {
+              var data = JSON.parse(jsonContent);
+              displayTable(data);
+            } catch (error) {
+              console.error("Erreur lors de la lecture du fichier JSON : " + error);
+            }
+          };
+
+          reader.readAsText(file);
+        }
+      });
+        
         $("#driver").prop('disabled', true)
         $("#stop").prop('disabled', true)
         //ligthTest.json
         //dungeon_master_rewards_S9.json
-        $.getJSON("./assets/json/dungeon_master_rewards_S9.json", function(data) {
+        $.getJSON("./assets/json/dm_s10_WAX.json", function(data) {
             json = data;
             $("#totalAssets").html(json.length)
             $("#driver").prop('disabled', false)
         });
+          
 
-        sliderMinMp.on("input", function() {
-            var minMp = $(this).val();
+        $("#search").click(async function(event) {
+            var minMp = sliderMinMp.val();
             var filteredData = filterData(myJsonString, minMp);
             displayTable(filteredData);
         });
-
         $("#stop").click(async function(event) {
             stopLoad=true
             $("#driver").prop('disabled', false)
@@ -127,6 +181,13 @@
         })
 
         var loop = 0;
+        $("#loadFromSave").click(async function(event){
+            console.log(savedData)
+            displayTable(savedData);
+        })
+
+
+
         $("#driver").click(async function(event){
             $("#myTable tbody tr").remove()
 
@@ -144,7 +205,8 @@
                 line.waxPrice = await Price(line['Template ID'], line.Collection);
                 line.valMpWax = line.waxPrice/line['Mining power'];
 
-                console.log("id : "+line['Template ID']+"| Price: "+line.waxPrice +"| Ratio: "+line.valMpWax)
+                //console.log("id : "+line['Template ID']+"| Price: "+line.waxPrice +"| Ratio: "+line.valMpWax)
+                
 
                 currentAssets++
                 $("#currentAssets").html(currentAssets)
@@ -154,12 +216,18 @@
             // await data.forEach(async function(item) {
             //     item.waxPrice = await calculateMiningPower(item['Template ID'], item['Mining power']);
             //});
-            myJsonString = JSON.parse(JSON.stringify(arrayTmp));
+
 
             // Trier les données par ordre croissant de la puissance minière
-            myJsonString.sort(function(a, b) {
+            arrayTmp.sort(function(a, b) {
                 return a.valMpWax - b.valMpWax;
             });
+
+           
+            myJsonString = JSON.parse(JSON.stringify(arrayTmp));
+            if($("#needsave")[0].checked){
+                    saveTable(JSON.stringify(arrayTmp))
+                }
 
             var items = [];
             $.each(myJsonString, function(key, val) {
@@ -177,10 +245,32 @@
                 items.push("<td>" + val.valMpWax + "</td>");
                 items.push("</tr>");
             });
+            
             $("#myTable tbody").html(items.join(""));
         });
 
     });
+
+
+    async function saveTable (data){
+
+        var blob = new Blob([data]);
+        var link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = "comparator_price_dmhelper.json";
+        link.click();
+
+
+        /*await fetch(`/saveInfo`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: data
+        }).then((response) => {
+            console.log(response)
+        })*/
+    }
 
     // Fonction pour afficher le tableau HTML à partir des données
     function displayTable(data) {
@@ -214,6 +304,8 @@
         });
         table.append(body);
     }
+
+
 
     // Fonction pour filtrer les données en fonction du prix minimum
     function filterData(data, minPrice) {
