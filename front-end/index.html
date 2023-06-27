@@ -146,8 +146,12 @@
             var jsonContent = e.target.result;
 
             try {
-              var data = JSON.parse(jsonContent);
-              displayTable(data);
+                var data = JSON.parse(jsonContent);
+                myJsonString = data
+                myJsonString.sort(function(a, b) {
+                    return a.valMpWax - b.valMpWax;
+                });
+                displayTable(myJsonString);
             } catch (error) {
               console.error("Erreur lors de la lecture du fichier JSON : " + error);
             }
@@ -181,11 +185,6 @@
         })
 
         var loop = 0;
-        $("#loadFromSave").click(async function(event){
-            console.log(savedData)
-            displayTable(savedData);
-        })
-
 
 
         $("#driver").click(async function(event){
