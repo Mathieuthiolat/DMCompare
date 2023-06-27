@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@waxio/waxjs": "^1.5.0",
     "body-parser": "^1.20.0",
     "ejs": "^3.1.8",
     "eosjs": "^22.1.0",
